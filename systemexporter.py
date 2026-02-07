@@ -16,8 +16,8 @@
 # ///
 # -*- coding: utf-8 -*-
 """
-NMS System Data Exporter v3.5
-Corrección de enums internos
+NMS System Data Exporter v3.6
+Mejoras varias
 """
 
 import json
@@ -90,8 +90,8 @@ class ExporterState(ModState):
 
 class SystemDataExporter(Mod):
     __author__ = ["Muhaddil"]
-    __description__ = "System Data Exporter v3.5"
-    __version__ = "3.5"
+    __description__ = "System Data Exporter v3.6"
+    __version__ = "3.6"
     
     state = ExporterState()
     
@@ -102,9 +102,9 @@ class SystemDataExporter(Mod):
         self.solar_system_ptr = None
         
         logger.info("=" * 60)
-        logger.info("Sistema de Exportacion v3.5 - Fix enums internos")
+        logger.info("Sistema de Exportacion v3.6 - Mejoras varias")
         logger.info("CONTROLES: U=Exportar, I=Consolidar, O=Auto-export")
-        logger.info("           D=Debug system data")
+        logger.info("           Y=Debug system data")
         logger.info("=" * 60)
     
     def clean_bytes(self, value) -> Optional[str]:
@@ -316,12 +316,13 @@ class SystemDataExporter(Mod):
                 )
                 if race:
                     result['raza'] = race
+                    {'presente': True}
             
-            return result if result else {'presente': True}
+            return result 
             
         except Exception as e:
             logger.error(f"Error extrayendo SpaceStationSpawn: {e}")
-            return {'presente': True}
+            return {'presente': False}
     
     # =========================================================================
     # HOOKS
@@ -466,7 +467,7 @@ class SystemDataExporter(Mod):
     def get_system_data(self) -> Dict[str, Any]:
         data = {
             'timestamp': datetime.now().isoformat(),
-            'version': '3.5',
+            'version': '3.6',
             'sistema': {},
             'planetas': [],
         }
@@ -887,7 +888,7 @@ class SystemDataExporter(Mod):
         self.auto_export = not self.auto_export
         logger.info(f"Auto-export: {'ON' if self.auto_export else 'OFF'}")
     
-    @on_key_release("d")
+    @on_key_release("y")
     def debug_system(self):
         """Debug: muestra estructura completa del sistema"""
         self.log_system_structure()
