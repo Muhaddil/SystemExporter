@@ -16,8 +16,8 @@
 # ///
 # -*- coding: utf-8 -*-
 """
-NMS System Data Exporter v3.2
-Extracción completa de datos 
+NMS System Data Exporter v3.5
+Corrección de enums internos
 """
 
 import json
@@ -90,8 +90,8 @@ class ExporterState(ModState):
 
 class SystemDataExporter(Mod):
     __author__ = ["Muhaddil"]
-    __description__ = "System Data Exporter v3.2"
-    __version__ = "3.2"
+    __description__ = "System Data Exporter v3.5"
+    __version__ = "3.5"
     
     state = ExporterState()
     
@@ -102,7 +102,7 @@ class SystemDataExporter(Mod):
         self.solar_system_ptr = None
         
         logger.info("=" * 60)
-        logger.info("Sistema de Exportacion v3.2")
+        logger.info("Sistema de Exportacion v3.5 - Fix enums internos")
         logger.info("CONTROLES: U=Exportar, I=Consolidar, O=Auto-export")
         logger.info("           D=Debug system data")
         logger.info("=" * 60)
@@ -192,7 +192,7 @@ class SystemDataExporter(Mod):
             try:
                 enum_val = enum_type(int_val)
                 return enum_val.name.rstrip('_')
-            except ValueError:
+            except (ValueError, KeyError):
                 # Valor fuera de rango - loguear y devolver None
                 logger.debug(f"{field_name}: valor {int_val} fuera de rango para {enum_type.__name__}")
                 return None
@@ -291,21 +291,27 @@ class SystemDataExporter(Mod):
                 if file_str:
                     result['archivo_modelo'] = file_str
             
-            # Type
+            # Type - Es un enum interno de cGcSpaceStationSpawnData
             if hasattr(spawn_obj, 'Type'):
-                type_val = self.safe_enum_extract(
-                    spawn_obj.Type,
-                    enums.cGcSpaceStationSpawnData.eTypeEnum,
-                    'SpaceStationSpawn.Type'
-                )
-                if type_val:
-                    result['tipo'] = type_val
+                try:
+                    # Intentar obtener el nombre del enum directamente
+                    if hasattr(spawn_obj.Type, 'name'):
+                        type_name = spawn_obj.Type.name.rstrip('_')
+                        result['tipo'] = type_name
+                    else:
+                        # Si no tiene name, intentar con el valor
+                        type_val = int(spawn_obj.Type)
+                        # Los tipos conocidos son: None, SpaceStation, MegaFreighter, DerelictFreighter
+                        type_names = {0: 'None', 1: 'SpaceStation', 2: 'MegaFreighter', 3: 'DerelictFreighter'}
+                        result['tipo'] = type_names.get(type_val, f'Unknown_{type_val}')
+                except Exception as e:
+                    logger.debug(f"Error extrayendo Type: {e}")
             
-            # Race (puede ser diferente a InhabitingRace del sistema)
+            # Race
             if hasattr(spawn_obj, 'Race'):
                 race = self.safe_enum_extract(
                     spawn_obj.Race,
-                    enums.cGcAlienRace,
+                    enums.eRace,
                     'SpaceStationSpawn.Race'
                 )
                 if race:
@@ -460,7 +466,7 @@ class SystemDataExporter(Mod):
     def get_system_data(self) -> Dict[str, Any]:
         data = {
             'timestamp': datetime.now().isoformat(),
-            'version': '3.4',
+            'version': '3.5',
             'sistema': {},
             'planetas': [],
         }
@@ -562,15 +568,28 @@ class SystemDataExporter(Mod):
                     if conflict:
                         data['sistema']['conflicto'] = conflict
                 
-                # AsteroidLevel
+                # AsteroidLevel - Intentar extraer sin especificar el enum anidado
                 if hasattr(ss, 'AsteroidLevel'):
-                    asteroid_level = self.safe_enum_extract(
-                        ss.AsteroidLevel,
-                        enums.cGcSolarSystemData.eAsteroidLevelEnum,
-                        'AsteroidLevel'
-                    )
-                    if asteroid_level:
-                        data['sistema']['nivel_asteroides'] = asteroid_level
+                    try:
+                        # Intentar obtener el nombre directamente si es un enum
+                        if hasattr(ss.AsteroidLevel, 'name'):
+                            level_name = ss.AsteroidLevel.name.rstrip('_')
+                            data['sistema']['nivel_asteroides'] = level_name
+                        else:
+                            # Si es un int, intentar mapear manualmente
+                            level_val = int(ss.AsteroidLevel)
+                            # Valores conocidos: 0=None, 1=LowCount, 2=HighCount, etc
+                            level_names = {
+                                0: 'None', 
+                                1: 'LowCount', 
+                                2: 'HighCount',
+                                3: 'CommonRoids',
+                                4: 'RareRoids'
+                            }
+                            if level_val in level_names:
+                                data['sistema']['nivel_asteroides'] = level_names[level_val]
+                    except Exception as e:
+                        logger.debug(f"Error extrayendo AsteroidLevel: {e}")
             
             # Planetas - VALIDACIÓN ESTRICTA
             if hasattr(solar, 'maPlanets'):
