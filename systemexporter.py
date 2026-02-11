@@ -70,15 +70,16 @@ RESOURCE_NAMES = {
     'BLUE1': 'Indio',
     'GREEN2': 'Emerilio',
     'BLUE2': 'Indio',
-    'EX_YELLOW': 'Cobre activado',
-    'EX_RED': 'Cadmio activado',
-    'EX_GREEN': 'Emerilio activado',
-    'EX_BLUE': 'Indio activado',
+    'EX_YELLOW': 'Cobre Activado',
+    'EX_RED': 'Cadmio Activado',
+    'EX_GREEN': 'Emerilio Activado',
+    'EX_BLUE': 'Indio Activado',
     'GAS1': 'Nitrógeno',
     'GAS2': 'Azufre',
     'GAS3': 'Radón',
     'EX_PURPLE': 'Cuarcita activada',
     'PURPLE2': 'Cuarcita',
+    'PLANT_POOP': 'Hecesio',
 }
 
 @dataclass
